@@ -129,6 +129,14 @@ def test_manifest_declares_the_contract(client):
     assert manifest["settingsSchema"]["properties"]["apiKey"]["writeOnly"] is True
 
 
+def test_it_can_be_added_before_its_settings_are_filled_in(client):
+    schema = client.get("/v1/manifest").json()["settingsSchema"]
+    assert "required" not in schema
+    defaults = {name: p["default"] for name, p in schema["properties"].items() if "default" in p}
+    health = client.post("/v1/health", json={"settings": defaults}).json()
+    assert health["status"] == "unhealthy" and "API key" in health["message"]
+
+
 @pytest.mark.parametrize("name, title", [("01 - One More Time.flac", "One More Time"), ("1-03 Digital Love.mp3", "Digital Love"),
                                           ("A2. Aerodynamic.flac", "Aerodynamic"), ("Voyager.flac", "Voyager")])
 def test_a_files_title_is_its_name_without_its_number(name, title):
