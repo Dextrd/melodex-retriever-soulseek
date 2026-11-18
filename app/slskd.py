@@ -173,12 +173,33 @@ def _candidate(username: str, kind: Kind, title: str, chosen: list[tuple[int | N
     )
 
 
+# A live recording's album, as MusicBrainz names live bootlegs: by the date they were played.
+_DATED = re.compile(r"\b(19|20)\d\d[-. ](0[1-9]|1[0-2])[-. ]([0-2]\d|3[01])\b")
+
+
+def _live(text: str | None) -> bool:
+    return bool(text) and (" live " in f" {normalise(text)} " or _DATED.search(text) is not None)
+
+
+def _album_fit(target: Target, path: str, folders: list[str], score: float) -> float:
+    """
+    A song is often on several albums, as a studio take and a live one with the same title. A file in a folder named
+    after the album asked for scores a little better; one that isn't live, when a live recording is asked for, much worse.
+    """
+    in_album = bool(target.album) and any(similarity(target.album, folder) >= 0.8 for folder in folders[-2:])
+    if in_album:
+        score = min(1.0, score + 0.05)
+    if (_live(target.title) or _live(target.album)) and not in_album and not _live(path):
+        score *= 0.5
+    return round(score, 3)
+
+
 def _tracks(target: Target, username: str, files: list[dict[str, Any]]) -> list[Candidate]:
     scored = []
     for f in files:
         folders = _parts(f["filename"])[:-1]
-        scored.append((track_score(target.title, target.artist, target.duration_seconds, _title(f["filename"]), folders[-3:],
-                                   f.get("length")), f))
+        score = track_score(target.title, target.artist, target.duration_seconds, _title(f["filename"]), folders[-3:], f.get("length"))
+        scored.append((_album_fit(target, f["filename"], folders, score), f))
     scored.sort(key=lambda x: x[0], reverse=True)
     # A peer's two best: often the same song in two formats or two of their folders.
     return [_candidate(username, Kind.track, _title(f["filename"]), [(None, None, f)], score,

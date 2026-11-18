@@ -173,6 +173,21 @@ def test_a_song_is_found_as_a_file(client, monkeypatch, tmp_path):
     assert json.loads(best["candidateId"])["f"] == [[None, None, "Music\\Daft Punk\\Discovery\\02 - Aerodynamic.flac", 3_000_000]]
 
 
+def test_a_live_song_is_found_live_not_as_the_studio_take_of_its_title(client, monkeypatch, tmp_path):
+    # Both are "Videotape", near enough the length, by the same artist: only the album tells them apart (#177).
+    use(monkeypatch, FakeSlskd([peer("studio", "Music\\Radiohead\\In Rainbows", [("10 - Videotape", 279)]),
+                                peer("live", "Music\\Radiohead\\2006-06-17 Bonnaroo", [("09 - Videotape", 300)])]))
+    live = {"kind": "track", "title": "Videotape", "artist": "Radiohead", "durationSeconds": 300,
+            "album": "2006-06-17: What Stage, Bonnaroo Festival, Manchester, TN, USA"}
+    found = client.post("/v1/search", json={"settings": settings(tmp_path), "target": live}).json()["candidates"]
+    assert [c["album"] for c in found] == ["2006-06-17 Bonnaroo"]
+
+    # Asked for from the studio album, the studio take is still found first.
+    rainbows = {**live, "album": "In Rainbows", "durationSeconds": 279}
+    found = client.post("/v1/search", json={"settings": settings(tmp_path), "target": rainbows}).json()["candidates"]
+    assert found[0]["album"] == "In Rainbows"
+
+
 def test_health_says_whats_wrong(client, monkeypatch, tmp_path):
     use(monkeypatch, FakeSlskd([]))
     health = client.post("/v1/health", json={"settings": settings(tmp_path)}).json()
