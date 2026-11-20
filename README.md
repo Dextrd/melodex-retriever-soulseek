@@ -3,8 +3,8 @@
 A Melodex retrieval plugin (contract v1.0) that finds music in what [Soulseek](https://www.slsknet.org)'s users share
 and downloads it, through your own [slskd](https://github.com/slskd/slskd) and its REST API.
 
-It runs beside [Melodex](https://github.com/dextrd/Melodex) as a container of its own, which Melodex reaches over the
-[retrieval plugin contract](https://github.com/dextrd/Melodex/blob/main/docs/contracts/README.md).
+It runs beside [Melodex](https://github.com/Dextrd/Melodex) as a container of its own, which Melodex reaches over the
+[retrieval plugin contract](https://github.com/Dextrd/Melodex/blob/main/docs/contracts/README.md).
 
 ## What it does
 
