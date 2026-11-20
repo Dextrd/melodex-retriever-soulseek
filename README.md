@@ -3,7 +3,8 @@
 A Melodex retrieval plugin (contract v1.0) that finds music in what [Soulseek](https://www.slsknet.org)'s users share
 and downloads it, through your own [slskd](https://github.com/slskd/slskd) and its REST API.
 
-It lives in the Melodex repository for now and will move to its own repository later.
+It runs beside [Melodex](https://github.com/dextrd/Melodex) as a container of its own, which Melodex reaches over the
+[retrieval plugin contract](https://github.com/dextrd/Melodex/blob/main/docs/contracts/README.md).
 
 ## What it does
 
@@ -36,15 +37,27 @@ the plugin's health says when you don't. Point slskd's `shares.directories` at w
 | `stallMinutes` | `5` | How long a download may receive nothing before trying another copy. |
 | `minScore` | `0.6` | Folders and files that match less well than this aren't offered. |
 
-## Running it
+## Adding it to Melodex
+
+Add this under `services:` in the compose file you run Melodex with, beside `core` and `beets-worker`, so it shares
+their `staging` volume:
 
 ```yaml
-retriever-soulseek:
-  build: plugins/retriever-soulseek
-  volumes:
-    - staging:/staging
-    - /path/to/slskd/downloads:/downloads
+  retriever-soulseek:
+    image: ghcr.io/dextrd/melodex-retriever-soulseek:latest
+    container_name: melodex-retriever-soulseek
+    user: "${PUID:-1000}:${PGID:-1000}"
+    restart: unless-stopped
+    volumes:
+      - staging:/staging
+      - ${SLSKD_DOWNLOADS_PATH:-./slskd-downloads}:/downloads
 ```
+
+`SLSKD_DOWNLOADS_PATH` is slskd's downloads folder, mounted writable since the plugin moves what slskd downloads into staging; set it in the `.env` file beside your compose file, or write the path in its place.
+
+Then start it with `docker compose up -d`. `latest` follows each release; to choose when it changes, use a version
+such as `2` or `2.0.0` instead. On SELinux hosts with podman, give it the same `security_opt` as Melodex's own
+containers.
 
 Then add `http://retriever-soulseek:8080` under Settings → Plugins in Melodex (it's one of the templates under Add).
 

@@ -12,7 +12,7 @@ from . import slskd
 from .contract import (CONTRACT_VERSION, FetchRequest, HealthRequest, Jobs, SearchRequest, dump, env, error,
                        staging_directory)
 
-VERSION = "0.1.0"
+VERSION = "2.0.0"
 STAGING = env("STAGING_ROOT", "/staging")
 
 # Nothing is marked required: Melodex adds a plugin before its settings can be filled in, and health says what's
